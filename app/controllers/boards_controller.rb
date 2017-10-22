@@ -1,4 +1,4 @@
-require_relative "../services/board_service"
+require "board_service"
 
 class BoardsController < ApplicationController
   before_action :set_board, only: [:show, :update, :destroy]
@@ -21,6 +21,9 @@ class BoardsController < ApplicationController
     if not Board.all.empty?
       Board.delete_all
     end
+
+    board_svc = BoardService.new
+    board_svc.create_cells(@board)
 
     if @board.save
       render json: @board, status: :created

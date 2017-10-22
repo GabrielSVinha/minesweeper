@@ -9,7 +9,7 @@ class Board
   field :height, type: Integer
   field :width, type: Integer
   field :bombs_count, type: Integer
-  field :scheme, type: Array
+  embeds_many :lines
 
   validates_with BoardValidator
 end
