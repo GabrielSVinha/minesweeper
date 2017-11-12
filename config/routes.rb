@@ -1,3 +1,6 @@
 Rails.application.routes.draw do
-  resources :boards
+  post '/board' => 'boards#create'
+  delete '/board' => 'boards#destroy'
+  get '/status' => 'boards#playing'
+  patch '/play' => 'boards#play'
 end
