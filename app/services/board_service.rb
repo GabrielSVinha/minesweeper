@@ -23,6 +23,14 @@ class BoardService
     add_bombs(cells_matrix, board)
   end
 
+  def flag(line, column, board)
+    raise 'Game Over' if not board.still_playing?
+
+    valid_play?(line, column, board)
+
+    @cell_svc.flag(line, column, board)
+  end
+
   def play(line, column, board)
     raise 'Game Over' if not board.still_playing?
     valid_play?(line, column, board)
@@ -54,13 +62,11 @@ class BoardService
   def add_bombs(scheme, board)
     board.bombs_count.times do |index|
       bomb = create_bomb(board.height, board.width)
-      puts board
       while board.lines[bomb.line].cells[bomb.col].is_bomb? == true
         bomb = create_bomb(board.height, board.width)
       end
       board.lines[bomb.line].cells[bomb.col].bomb = true
       board.lines[bomb.line].cells[bomb.col].close_bombs = 0
-      puts "another bomb to tbe marked #{bomb}"
       # Mark all the neighbour cells
       mark_cell(board, bomb.line - 1, bomb.col)
       mark_cell(board, bomb.line - 1, bomb.col + 1)
@@ -83,7 +89,6 @@ class BoardService
   def mark_cell(board, line, col)
     return if board.lines.size <= line or board.lines[0].cells.size <= col
     return if line < 0 or col < 0
-    puts "#{line} e #{col}"
     if not board.lines[line].cells[col].is_bomb?
       board.lines[line].cells[col].close_bombs += 1
     end
