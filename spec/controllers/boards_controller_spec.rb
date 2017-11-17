@@ -30,9 +30,9 @@ RSpec.describe BoardsController, type: :controller do
   # adjust the attributes here as well.
   let(:valid_attributes) {
     {
-      :height => Faker::Number.number(2),
-      :width => Faker::Number.number(2),
-      :bombs_count => Faker::Number.number(1)
+      :height      => Random.rand(10...100),
+      :width       => Random.rand(10...100),
+      :bombs_count => Random.rand(1...100)
     }
   }
 
@@ -45,108 +45,89 @@ RSpec.describe BoardsController, type: :controller do
   # BoardsController. Be sure to keep this updated too.
   let(:valid_session) { {} }
 
-  # describe "GET #index" do
-  #   it "returns a success response" do
-  #     board = Board.create! valid_attributes
-  #     get :index, params: {}, session: valid_session
-  #     expect(response).to be_success
-  #   end
-  # end
-
   describe "POST #create" do
-    # context "with valid params" do
-    #   it "creates a new Board" do
-    #     post :create, params: {board: valid_attributes}, session: valid_session
-    #     expect(Board.count).to eq(1)
-    #   end
+     context "with valid params" do
+       it "creates a new Board" do
+         post :create, params: {board: valid_attributes}, as: :json, session: valid_session
+         expect(Board.count).to eq(1)
+       end
 
-    #   it "creates a scheme for the board" do
-    #     puts "altura: #{valid_attributes[:height]} largura #{valid_attributes[:width]}"
-    #     valid = true
-    #     post :create, params: {board: valid_attributes}, session: valid_session
-    #     board = Board.first
-    #     bombs = 0
-    #     board.lines.each do |line|
-    #       if not line.is_a? Line
-    #         puts 'erro na linha'
-    #         valid = false
-    #       end
-    #       line.cells.each do |cell|
-    #         if not cell.is_a? Cell
-    #           puts 'erro na coluna'
-    #           valid = false
-    #         end
-    #         if cell.is_bomb?
-    #           bombs += 1
-    #         end
-    #       end
-    #     end
+       it "renders a JSON response with the new board" do
 
-    #     if bombs != valid_attributes[:bombs_count].to_i
-    #       puts "erro nas bomba, #{valid_attributes[:bombs_count]} sendo que #{bombs}"
-    #       valid = false
-    #     end
-    #     expect(valid).to be_truthy
-    #   end
-
-    #   it "renders a JSON response with the new board" do
-
-    #     post :create, params: {board: valid_attributes}, session: valid_session
-    #     expect(response).to have_http_status(:created)
-    #     expect(response.content_type).to eq('application/json')
-    #   end
-    # end
+         post :create, params: {board: valid_attributes}, session: valid_session
+         expect(response).to have_http_status(:created)
+         expect(response.content_type).to eq('application/json')
+       end
+     
+    end
 
     context "with invalid params" do
       it "renders a JSON response with errors for the new board" do
 
-        post :create, params: {board: invalid_attributes}, session: valid_session
+        post :create, params: {board: invalid_attributes}, as: :json,  session: valid_session
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response.content_type).to eq('application/json')
       end
     end
   end
 
-  # describe "PUT #update" do
-  #   context "with valid params" do
-  #     let(:new_attributes) {
-  #       skip("Add a hash of attributes valid for your model")
-  #     }
+  describe "DELETE #destroy" do
+    it "destroys the requested board" do
+      board = Board.create! valid_attributes
+      expect {
+        delete :destroy, params: {id: board.to_param}, session: valid_session
+      }.to change(Board, :count).by(-1)
+    end
+  end
+  
+  describe "GET #playing" do
+    before(:each) do
+      post :create, params: {board: valid_attributes}, session: valid_session
+    end
 
-  #     it "updates the requested board" do
-  #       board = Board.create! valid_attributes
-  #       put :update, params: {id: board.to_param, board: new_attributes}, session: valid_session
-  #       board.reload
-  #       skip("Add assertions for updated state")
-  #     end
+    it "returns if the game is on" do
+      get :playing
+      expect(response.content_type).to eq('application/json')
+      expect(response).to have_http_status(:ok)
+      expect([true, false]).to include(JSON.parse(response.body)["playing"])
+    end
+  end
 
-  #     it "renders a JSON response with the board" do
-  #       board = Board.create! valid_attributes
+  describe "PATCH #flag" do
+    before :each do
+      post :create, params: {board: valid_attributes}, session: valid_session
+      @line = Random.rand(0...valid_attributes[:height].to_i)
+      @column = Random.rand(0...valid_attributes[:width].to_i)
+    end
 
-  #       put :update, params: {id: board.to_param, board: valid_attributes}, session: valid_session
-  #       expect(response).to have_http_status(:ok)
-  #       expect(response.content_type).to eq('application/json')
-  #     end
-  #   end
+    it "return a JSON response with the flagged board" do
+      patch :flag, params: {"line": @line, "column": @column}, as: :json, session: valid_session
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to eq('application/json')
+    end
 
-  #   context "with invalid params" do
-  #     it "renders a JSON response with errors for the board" do
-  #       board = Board.create! valid_attributes
+    it "changes the flag attribute on the passed cell" do
+      patch :flag, params: {"line": @line, "column": @column}, as: :json, session: valid_session
+      expect(Board.first.lines[@line].cells[@column].flag).to be_truthy
+    end
+  end
 
-  #       put :update, params: {id: board.to_param, board: invalid_attributes}, session: valid_session
-  #       expect(response).to have_http_status(:unprocessable_entity)
-  #       expect(response.content_type).to eq('application/json')
-  #     end
-  #   end
-  # end
+  describe "PATCH #play" do
+    before :each do
+      post :create, params: {board: valid_attributes}, session: valid_session
+      @line = Random.rand(0...valid_attributes[:height])
+      @column = Random.rand(0...valid_attributes[:width])
+    end
 
-  # describe "DELETE #destroy" do
-  #   it "destroys the requested board" do
-  #     board = Board.create! valid_attributes
-  #     expect {
-  #       delete :destroy, params: {id: board.to_param}, session: valid_session
-  #     }.to change(Board, :count).by(-1)
-  #   end
-  # end
+    it "return a JSON response with the discovered board" do
+      patch :flag, params: {"line": @line, "column": @column}, as: :json, session: valid_session
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to eq('application/json')
+    end
 
+    it "discover at least the played cell" do
+      patch :play, params: {"line": @line, "column": @column}, as: :json, session: valid_session
+      expect(Board.first.lines[@line].cells[@column].discovered).to be_truthy
+    end
+  end
 end
