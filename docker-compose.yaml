@@ -1,0 +1,17 @@
+db:
+  image: mongo
+  ports:
+    - "27017:27017"
+  command: "--smallfiles --logpath=/dev/log"
+web:
+  build: .
+  command: "bundle exec rails puma"
+  ports: 
+    - "3000:3000"
+  volumes:
+    - ./:/app
+  links:
+    - db
+  environment:
+    PORT: 3000
+
